@@ -37,65 +37,59 @@ export default function Home() {
     };
 
     useEffect(() => {
-        const fetchLocationAndData = async () => {
+        const fetchData = async () => {
             setLoading(true);
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        const { latitude, longitude } = position.coords;
-                        setUserPos([latitude, longitude]);
-                        // console.log("User location (Frontend):", {
-                        //     lat: latitude,
-                        //     lng: longitude,
-                        // });
-
-                        try {
-                            // Send the user's location to the backend
-                            const res = await fetch("/api/open-classrooms", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                    lat: latitude,
-                                    lng: longitude,
-                                }),
-                            });
-
-                            const data = await res.json();
-                            setData(data);
-                        } catch (error) {
-                            console.error(
-                                "Failed to fetch data from backend:",
-                                error
-                            );
-                        } finally {
-                            setLoading(false);
-                        }
-                    },
-                    async (error) => {
-                        console.error("Error fetching location here:", error);
-
-                        // Fallback to fetching unsorted data
-                        const res = await fetch("/api/open-classrooms");
-                        const defaultData = await res.json();
-                        setData(defaultData);
-                        setLoading(false);
-                    }
-                );
-            } else {
-                console.error("Geolocation is not supported by this browser.");
-                const res = await fetch("/api/open-classrooms", {
-                    method: "GET",
-                });
-                const defaultData = await res.json();
-                setData(defaultData);
+            try {
+                const res = await fetch("/api/open-classrooms");
+                const data = await res.json();
+                setData(data);
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+            } finally {
                 setLoading(false);
             }
         };
 
-        fetchLocationAndData();
+        fetchData();
+
+        // Geolocation-based fetching (disabled for now — single campus)
+        // const fetchLocationAndData = async () => {
+        //     setLoading(true);
+        //     if (navigator.geolocation) {
+        //         navigator.geolocation.getCurrentPosition(
+        //             async (position) => {
+        //                 const { latitude, longitude } = position.coords;
+        //                 setUserPos([latitude, longitude]);
+        //                 try {
+        //                     const res = await fetch("/api/open-classrooms", {
+        //                         method: "POST",
+        //                         headers: { "Content-Type": "application/json" },
+        //                         body: JSON.stringify({ lat: latitude, lng: longitude }),
+        //                     });
+        //                     const data = await res.json();
+        //                     setData(data);
+        //                 } catch (error) {
+        //                     console.error("Failed to fetch data from backend:", error);
+        //                 } finally {
+        //                     setLoading(false);
+        //                 }
+        //             },
+        //             async (error) => {
+        //                 console.error("Error fetching location:", error);
+        //                 const res = await fetch("/api/open-classrooms");
+        //                 const defaultData = await res.json();
+        //                 setData(defaultData);
+        //                 setLoading(false);
+        //             }
+        //         );
+        //     } else {
+        //         const res = await fetch("/api/open-classrooms");
+        //         const defaultData = await res.json();
+        //         setData(defaultData);
+        //         setLoading(false);
+        //     }
+        // };
+        // fetchLocationAndData();
     }, []);
 
     if (loading) {
