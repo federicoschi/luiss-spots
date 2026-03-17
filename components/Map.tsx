@@ -72,7 +72,7 @@ export default function Map({
             if (!map) return;
 
             // Add 3D building extrusions
-            const layers = map.getStyle().layers;
+            const layers = map.getStyle()?.layers;
             // Find the first symbol layer to insert buildings below labels
             let labelLayerId: string | undefined;
             if (layers) {
