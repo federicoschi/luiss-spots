@@ -199,7 +199,10 @@ async function fetchLuissData(): Promise<LuissApiResponse> {
     const today = getTodayFormatted();
     const response = await fetch(LUISS_API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "LUISSSpots/1.0 (Open classroom finder; reports@federicoschi.systems)",
+        },
         body: `sede=LUISSRO&date=${today}`,
         cache: "no-cache",
     });
