@@ -18,7 +18,7 @@ interface dataFormat {
     building_status: string;
     rooms: {
         [key: string]: {
-            roomNumber: string;
+            name: string;
             slots: { StartTime: string; EndTime: string; Status: string }[];
         };
     };
@@ -80,9 +80,6 @@ export default function Home() {
                         // Fallback to fetching unsorted data
                         const res = await fetch("/api/open-classrooms");
                         const defaultData = await res.json();
-                        setData(defaultData);
-
-                        // console.log("Default data (no location):", defaultData);
                         setData(defaultData);
                         setLoading(false);
                     }
@@ -147,24 +144,20 @@ export default function Home() {
                         </PopoverTrigger>
                         <PopoverContent className="bg-zinc-900 border-zinc-600 text-zinc-200 w-72">
                             <div className="font-bold mb-1">
-                                Important Notes:
+                                Note importanti:
                             </div>
                             <ul className="list-disc pl-4">
                                 <li>
-                                    Building/room access may be restricted to
-                                    specific colleges or departments
+                                    La disponibilit&agrave; mostrata riflette
+                                    solo gli orari ufficiali delle lezioni
                                 </li>
                                 <li>
-                                    Displayed availability only reflects
-                                    official class schedules
+                                    Le aule potrebbero essere occupate da
+                                    riunioni o gruppi di studio non registrati
                                 </li>
                                 <li>
-                                    Rooms may be occupied by unofficial meetings
-                                    or study groups
-                                </li>
-                                <li>
-                                    Click on indicators to view room schedules
-                                    for that building
+                                    Clicca sugli indicatori per vedere gli orari
+                                    delle aule per piano
                                 </li>
                             </ul>
                             {/* <div className="text-sm mt-2 pl-4">

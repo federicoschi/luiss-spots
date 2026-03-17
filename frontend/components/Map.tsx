@@ -10,7 +10,7 @@ interface dataFormat {
     building_status: string;
     rooms: {
         [key: string]: {
-            roomNumber: string;
+            name: string;
             slots: { StartTime: string; EndTime: string; Status: string }[];
         };
     };
@@ -19,19 +19,19 @@ interface dataFormat {
 }
 
 export default function Map({
-    data,
+    data = [],
     handleMarkerClick,
     userPos,
 }: {
     data: dataFormat[];
     handleMarkerClick: (building: string) => void;
-    userPos: any;
+    userPos: [number, number] | null;
 }) {
     const mapRef = useRef<mapboxgl.Map | null>(null);
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
-    const [center, setCenter] = useState<[number, number]>([-80.5425, 43.4695]);
-    const [zoom, setZoom] = useState(16.25);
+    const [center, setCenter] = useState<[number, number]>([12.493749195952972, 41.92433595438564]);
+    const [zoom, setZoom] = useState(17);
     const [pitch, setPitch] = useState(52);
 
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -55,13 +55,64 @@ export default function Map({
         } else {
             console.error("Mapbox token is not defined");
         }
-        mapboxToken;
         mapRef.current = new mapboxgl.Map({
-            style: "mapbox://styles/notakki/cm1o3v5kr00bl01pd2k7tho6i",
+            style: "mapbox://styles/mapbox/dark-v11",
             container: mapContainerRef.current as HTMLElement,
             center: center,
             zoom: zoom,
             pitch: pitch,
+        });
+
+        mapRef.current.on("click", (e) => {
+            console.log(`Clicked: ${e.lngLat.lat}, ${e.lngLat.lng}`);
+        });
+
+        mapRef.current.on("load", () => {
+            const map = mapRef.current;
+            if (!map) return;
+
+            // Add 3D building extrusions
+            const layers = map.getStyle().layers;
+            // Find the first symbol layer to insert buildings below labels
+            let labelLayerId: string | undefined;
+            if (layers) {
+                for (const layer of layers) {
+                    if (layer.type === "symbol" && (layer.layout as Record<string, unknown>)?.["text-field"]) {
+                        labelLayerId = layer.id;
+                        break;
+                    }
+                }
+            }
+
+            map.addLayer(
+                {
+                    id: "3d-buildings",
+                    source: "composite",
+                    "source-layer": "building",
+                    filter: ["==", "extrude", "true"],
+                    type: "fill-extrusion",
+                    minzoom: 14,
+                    paint: {
+                        "fill-extrusion-color": "#1e1e2e",
+                        "fill-extrusion-height": [
+                            "interpolate",
+                            ["linear"],
+                            ["zoom"],
+                            14, 0,
+                            14.5, ["get", "height"],
+                        ],
+                        "fill-extrusion-base": [
+                            "interpolate",
+                            ["linear"],
+                            ["zoom"],
+                            14, 0,
+                            14.5, ["get", "min_height"],
+                        ],
+                        "fill-extrusion-opacity": 0.8,
+                    },
+                },
+                labelLayerId
+            );
         });
 
         mapRef.current.on("move", () => {
@@ -76,14 +127,35 @@ export default function Map({
             }
         });
 
-        data.map((data) => {
+        // Deduplicate markers by coordinates — one marker per physical building
+        const markersByCoords: Record<string, { coords: [number, number]; status: string; codes: string[] }> = {};
+        const statusPriority: Record<string, number> = { available: 2, upcoming: 1, unavailable: 0 };
+
+        for (const entry of data) {
+            const key = `${entry.coords[0]},${entry.coords[1]}`;
+            const existing = markersByCoords[key];
+            if (existing) {
+                existing.codes.push(entry.building_code);
+                if ((statusPriority[entry.building_status] ?? 0) > (statusPriority[existing.status] ?? 0)) {
+                    existing.status = entry.building_status;
+                }
+            } else {
+                markersByCoords[key] = {
+                    coords: entry.coords,
+                    status: entry.building_status,
+                    codes: [entry.building_code],
+                };
+            }
+        }
+
+        for (const marker of Object.values(markersByCoords)) {
             const el = document.createElement("div");
-            el.className = getColorByStatus(data.building_status);
+            el.className = getColorByStatus(marker.status);
 
             el.addEventListener("click", () => {
-                const accordionItem = document.getElementById(
-                    data.building_code
-                );
+                // Scroll to the first floor group for this building
+                const firstCode = marker.codes[0];
+                const accordionItem = document.getElementById(firstCode);
 
                 setTimeout(() => {
                     if (accordionItem) {
@@ -94,15 +166,15 @@ export default function Map({
                     }
                 }, 300);
 
-                handleMarkerClick(data.building_code);
+                handleMarkerClick(firstCode);
             });
 
-            if (mapRef.current && data.coords) {
+            if (mapRef.current) {
                 new mapboxgl.Marker(el)
-                    .setLngLat([data.coords[0], data.coords[1]])
+                    .setLngLat([marker.coords[0], marker.coords[1]])
                     .addTo(mapRef.current);
             }
-        });
+        }
 
         if (userPos) {
             const e2 = document.createElement("div");

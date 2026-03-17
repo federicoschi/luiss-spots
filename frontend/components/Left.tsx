@@ -14,7 +14,7 @@ interface DataFormat {
     building_status: string;
     rooms: {
         [key: string]: {
-            roomNumber: string;
+            name: string;
             slots: { StartTime: string; EndTime: string; Status: string }[];
         };
     };
@@ -74,7 +74,7 @@ export default function Left({
             <div className="px-8 my-2">
                 <Alert className="mx-auto w-fit text-center">
                     <AlertDescription>
-                        Data not available after 10:00 PM
+                        Nessuna aula disponibile al momento
                     </AlertDescription>
                 </Alert>
             </div>
@@ -86,8 +86,8 @@ export default function Left({
                 <div className="my-2">
                     <Alert className="mx-auto w-fit text-center">
                         <AlertDescription>
-                            Data on weekends represents data for the coming
-                            Monday
+                            I dati nel weekend si riferiscono al prossimo
+                            luned&igrave;
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -109,7 +109,6 @@ export default function Left({
                         <AccordionTrigger>
                             <div className="flex justify-between w-[95%] text-left text-lg group items-center">
                                 <div className="group-hover:underline underline-offset-8 pr-2">
-                                    {building.building_code} -{" "}
                                     {building.building}
                                 </div>
                                 <div className="">
@@ -128,8 +127,7 @@ export default function Left({
                                             >
                                                 <div className="flex gap-4 items-center h-[fit-content]">
                                                     <div className="w-18">
-                                                        {building.building_code}{" "}
-                                                        {roomNumber}
+                                                        {room.name || roomNumber}
                                                     </div>
                                                     <div className="relative">
                                                         {statusIndicator(
